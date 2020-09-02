@@ -1,12 +1,44 @@
 import nltk, re, spacy
 from operator import itemgetter
+from textblob import TextBlob
 
 class TextAnalyzer:
     def __init__(self, text):
         self.text = text
+        self.__process_text()
         self.nlp = spacy.load("en_core_web_sm")
         self.__preprocess()
-   
+    
+
+    def __process_text(self):
+        self.__make_sentences()
+        self.__tag_and_chunk_sentences()
+
+
+    def __make_sentences(self):
+        self.sentences = []
+        for line in nltk.sent_tokenize(self.text):
+            self.sentences.append(self.__process_line(line))
+    
+    def __tag_and_chunk_sentences(self):
+        self.sentence_tags = []
+       
+        for sentence in self.sentences:
+            blob = TextBlob(sentence)
+            sentence_tags = blob.tags
+            self.sentence_tags.append(sentence_tags)
+        print(self.sentence_tags)
+
+
+    def __process_line(self,line):
+        special_chars = ['\n', '\t', u'\xa0', u'\u200b']
+        list_without_special_chars = [c for c in line if c not in special_chars]
+        list_to_line = ''.join(list_without_special_chars)
+        stripped_line = list_to_line.strip()
+        lower_case_line = stripped_line.lower()
+        return lower_case_line
+
+    
     def get_summary_sentences(self):
         self.__score_sents()
         if len(self.scores) > 2:

@@ -65,7 +65,6 @@ class EmailParser:
         if 'text' in info:
             self.__parse_text(info['text'])
         if 'table_data' in info:
-            print('table data \n')
             self.overview['data'].update(info['table_data'])
         if 'list_data' in info:
             self.overview['data'].update(info['list_data'])
