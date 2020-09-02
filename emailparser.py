@@ -9,13 +9,19 @@ class EmailParser:
     
     def __init__(self, email=None, context=None):
         self.text_info = []
-        self.html_info = []
+        self.overview = {}
+        self.overview['summary'] = []
+        self.overview['keywords'] = []
+        self.overview['intro'] = []
+        self.overview['exit'] = []
+        self.overview['data'] = {}
         if context:
             self.context = context
         else:
             self.context = None
         if type(email) is Email:
             self.email = email
+            
             self.__parse_email()
     
     def __parse_email(self):
@@ -23,7 +29,8 @@ class EmailParser:
         self.__parse_body()
 
     def __parse_header(self):
-        self.__search_context_in_text(self.email.subject)
+        self.overview['subject'] = self.email.subject
+        self.overview['from'] = self.email.email_from
     
     def __parse_body(self):
         self.body_data = {}
@@ -37,50 +44,44 @@ class EmailParser:
         text_content = {}
         processed_content = self.__parse_intro_exit(content)
         text_analyzer = TextAnalyzer(processed_content)
-        text_content['summary'] = text_analyzer.get_summary_sentences()
+        self.overview['summary'].append(text_analyzer.get_summary_sentences())
         if self.context:
             for key in self.context.keys():
                 search = text_analyzer.search_for(self.context[key])
-                text_content[key] = search
-        
-        self.text_info.append(text_content)
+                self.overview['keywords'].append({key : search})
     
     def __parse_intro_exit(self, content):
         split_content = content.split('\n\n')
         if len(split_content) > 2:
             if ',' in split_content[0]:
-                split_content.pop(0)
+                self.overview['intro'].append(split_content.pop(0))
             split_content.pop()
-            split_content.pop()
+            self.overview['exit'].append(split_content.pop())
         return ' '.join(split_content)
 
     def __parse_html(self,content):
         html = HtmlAnalyzer(content)
-        self.html_info.append(html.get_info())
+        info = html.get_info()
+        if 'text' in info:
+            self.__parse_text(info['text'])
+        if 'table_data' in info:
+            print('table data \n')
+            self.overview['data'].update(info['table_data'])
+        if 'list_data' in info:
+            self.overview['data'].update(info['list_data'])
+
+    def __get(self, get):
+        if get in self.overview:
+            return self.overview[get]        
+
+    def email_info(self):
+        return self.overview
+
+    def get_email_data(self):
+        return self.__get('data')
+
+    def get_email_summary(self):
+        return self.__get('summary')
     
-    def __search_context_in_text(self, text):
-        if self.context:
-            results  = {}
-            for key in self.context.keys():
-                search = [match for match in self.context[key] if match in text]
-                results[key] = search
-            return results
-        else:
-            return None
-
-    def __search_context_in_df(self, df):
-        if self.context:
-            print(df.columns)
-
-    def __find_text_info(self, sent):
-        nlp = spacy.load("en_core_web_sm")
-        doc = nlp(sent)
-        for ent in doc:
-            print(ent.text, ent.start_char, ent.end_char, ent.label_) 
-
-
-    def get_text_content(self):
-        return self.text_info
-    
-    def get_html_content(self):
-        return self.html_info
+    def get_email_keyword(self):
+        return self.__get('keywords')
