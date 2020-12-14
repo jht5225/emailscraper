@@ -1,6 +1,6 @@
 import imaplib, email, os, time
 from email.header import decode_header
-from emailobj import Email
+from .emailobj import Email
 
 class Mailbox:
     def __init__(self, username, password, imap='imap.gmail.com'):
@@ -34,7 +34,7 @@ class Mailbox:
             if new_email not in self.emails:
                 self.emails.append(new_email)
                 self.new_emails.append(new_email)
-        # self.__delete_old_emails()
+        self.__delete_old_emails()
 
     def __delete_old_emails(self):
         typ,data = self.con.search(None, 'ALL')

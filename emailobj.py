@@ -28,7 +28,7 @@ class Email:
     def parse_email_header(self):
         subject = decode_header(self.msg["Subject"])[0][0]
         if type(subject) is bytes:
-            subject = subject.decode('UTF-8')
+            subject = subject.decode('cp1252')
         self.subject = subject
     
     def parse_email_from(self):
@@ -59,7 +59,7 @@ class Email:
         content_disposition = str(part.get("Content-Disposition"))
         error = False
         try:
-            body = part.get_payload(decode=True).decode()
+            body = part.get_payload(decode=True).decode('cp1252')
         except:
             error = True
             body = "Could not parse"
@@ -86,6 +86,9 @@ class Email:
         else:
             return self.make_part_dict("attchment", "Could not load")
 
+    def get_from(self):
+        return self.email_from
+    
     def get_time(self):
         return self.time
 
@@ -96,11 +99,14 @@ class Email:
         return self.body
 
     def get_text_content(self):
-        text_content = []
+        text_content = ''
+        is_html = False
         for part in self.body:
             if part['type'] == "text" or part['type'] == "html":
-                text_content.append(part)
-        return text_content
+                text_content = text_content + part['content']
+                if part['type'] == "html":
+                    is_html = True
+        return text_content, is_html
     
     def get_attachments(self):
         attachments = []
